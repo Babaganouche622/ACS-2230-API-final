@@ -1,0 +1,39 @@
+{
+  "name": "acs-2230-api-final",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "test": "mocha --exit",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Babaganouche622/ACS-2230-Reddit-Clone.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Babaganouche622/ACS-2230-Reddit-Clone/issues"
+  },
+  "homepage": "https://github.com/Babaganouche622/ACS-2230-Reddit-Clone#readme",
+  "dependencies": {
+    "bcrypt": "^5.1.0",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "express-handlebars": "^7.0.4",
+    "express-validator": "^6.15.0",
+    "jsonwebtoken": "^9.0.0",
+    "mongoose": "^7.0.4",
+    "nodemon": "^2.0.22"
+  },
+  "devDependencies": {
+    "chai": "^4.3.7",
+    "chai-http": "^4.3.0",
+    "mocha": "^10.2.0"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "description": ""
+}
