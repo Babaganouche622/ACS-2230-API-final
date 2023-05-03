@@ -15,6 +15,8 @@ app.use(cookieParser());
 
 const User = require('./models/user');
 
+require('./controllers/user.js')(app);
+
 app.listen(process.env.PORT, () => {
     console.log(`Server running on port ${process.env.PORT}`);
 });

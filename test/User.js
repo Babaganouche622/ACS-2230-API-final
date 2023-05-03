@@ -9,7 +9,7 @@ chai.use(chaiHttp);
 
 const agent = chai.request.agent(app);
 
-const User = require('../models/User');
+const User = require('../models/user');
 const user = require('../controllers/user');
 
 describe('User', function () {
@@ -44,7 +44,7 @@ describe('User', function () {
   });
 
   it('should be able to signup', function (done) {
-    agent.post('/signup').send({ email: 'newexample@nope.com', password: 'password' }).end(function (err, res) {
+    agent.post('/sign-up').send({ email: 'newexample@nope.com', password: 'password' }).end(function (err, res) {
       console.log(res.body);
       res.should.have.status(200);
       agent.should.have.cookie('nToken');
@@ -53,7 +53,10 @@ describe('User', function () {
   });
 
   it('should be able to login', function (done) {
-    agent.post('/login').send({ email: user.email, password: user.password }).end(function (err, res) {
+    agent
+    .post('/login')
+    .send({ email: 'newexample@nope.com', password: 'password' })
+    .end(function (err, res) {
       res.should.have.status(200);
       agent.should.have.cookie('nToken');
       done();
