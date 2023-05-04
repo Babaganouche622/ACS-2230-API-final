@@ -2,8 +2,15 @@ const { Schema, model } = require('mongoose');
 const bcrypt = require('bcrypt');
 
 const userSchema = new Schema({
+  name: { type: String },
   email: { type: String, required: true },
   password: { type: String, select: false },
+  catchPhrase: { type: String },
+  maxHealth: { type: Number, default: 1000 },
+  currentHealth: { type: Number, default: 1000 },
+  experience: { type: Number, default: 0 },
+  attack: { type: Number, default: 5 },
+  level: { type: Number, default: 0 },
 }, { timestamps: true });
 
 // Must use function expressions here! ES6 => functions do not bind this!

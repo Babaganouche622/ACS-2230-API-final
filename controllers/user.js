@@ -2,10 +2,10 @@ require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const User = require('../models/user');
+const axios = require('axios');
+const checkAuth = require('../middleware/checkAuth');
 
 module.exports = (app) => {
-  console.log("Am I here?")
-
   // INDEX
   app.get('/', (req, res) => {
     res.json({ message: 'Hello World' });
@@ -16,6 +16,8 @@ module.exports = (app) => {
     try {
       // Create User
       const user = new User(req.body);
+      const response = await axios.get('https://foaas.com/programmer/bob', { headers: { 'Accept': 'application/json' } });
+      user.catchPhrase = response.data.message;
       await user.save();
 
       // Create JWT token
@@ -69,8 +71,11 @@ module.exports = (app) => {
   });
 
   // SHOW all
-  app.get('/users', async (req, res) => {
+  app.get('/users', checkAuth, async (req, res) => {
     try {
+      if (!req.user) {
+        return res.status(401).send('Unauthorized. Please login.');
+      }
       const users = await User.find();
       res.json({ users });
     } catch (err) {
@@ -80,8 +85,11 @@ module.exports = (app) => {
   });
 
   // SHOW one
-  app.get('/users/:id', async (req, res) => {
+  app.get('/users/:id', checkAuth, async (req, res) => {
     try {
+      if (!req.currentUser) {
+        return res.status(401).send('Unauthorized. Please login.');
+      }
       const { id } = req.params;
       const user = await User.findById(id);
       if (!user) {
@@ -95,8 +103,11 @@ module.exports = (app) => {
   });
 
   // UPDATE
-  app.put('/users/:id/update', async (req, res) => {
+  app.put('/users/:id/update', checkAuth, async (req, res) => {
     try {
+      if (!req.user) {
+        return res.status(401).send('Unauthorized. Please login.');
+      }
       const { id } = req.params;
       const { email, password } = req.body;
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -112,8 +123,11 @@ module.exports = (app) => {
   });
 
   // DELETE
-  app.delete('/users/:id/delete', async (req, res) => {
+  app.delete('/users/:id/delete', checkAuth, async (req, res) => {
     try {
+      if (!req.user) {
+        return res.status(401).send('Unauthorized. Please login.');
+      }
       const { id } = req.params;
       const user = await User.findByIdAndDelete(id);
       if (!user) {
@@ -124,6 +138,103 @@ module.exports = (app) => {
       console.log(`Delete user error: ${err}`);
       res.status(404).
         json({ error: err.message });
+    }
+  });
+
+  // Route to attack another user
+  app.post('/users/:playerId/attack', async (req, res) => {
+    try {
+      const attackingUser = await User.findById(req.params.playerId);
+      const targetUser = await User.findById(req.body.enemyId);
+      if (!attackingUser || !targetUser) {
+        return res.status(404).send();
+      }
+      let levelUpMessage;
+      const attackValue = attackingUser.attack;
+      targetUser.currentHealth -= attackValue;
+      attackingUser.experience += 10;
+      if (attackingUser.experience >= 100) {
+        attackingUser.level += 1;
+        attackingUser.experience = 0;
+        attackingUser.attack += 5;
+        attackingUser.maxHealth += 50;
+        attackingUser.currentHealth = attackingUser.maxHealth;
+        levelUpMessage = `${attackingUser.name} leveled up!`;
+      }
+
+      await targetUser.save();
+      await attackingUser.save();
+
+      res.send({
+        attackingUser,
+        targetUser,
+        message: `${attackingUser.name} uses catch phrase: ${attackingUser.catchPhrase} and deals ${attackValue} damage to ${targetUser.name}! ${levelUpMessage === undefined || null ? '' : levelUpMessage}`,
+      });
+    } catch (e) {
+      res.status(500).send();
+    }
+  });
+
+  app.post('/users/:playerId/heal', async (req, res) => {
+    try {
+      const user = await User.findById(req.params.playerId);
+      if (!user) {
+        return res.status(404).send();
+      }
+
+      const healValue = req.body.healValue || 10;
+      if (user.currentHealth + healValue > user.maxHealth) {
+        user.currentHealth = user.maxHealth;
+      } else {
+        user.currentHealth += healValue;
+      }
+
+      await user.save();
+
+      res.send({
+        user,
+        message: `${user.name} was healed!!`,
+      });
+    } catch (e) {
+      res.status(500).send();
+    }
+  });
+
+  app.get('/edit-catch-phrase', checkAuth, async (req, res) => {
+    try {
+      // Retrieve user from JWT token
+      if (!req.user) {
+        return res.status(401).send('Unauthorized. Please login.');
+      }
+      const response = await axios.get('https://foaas.com/operations', { headers: { 'Accept': 'application/json' } });
+      const operations = response.data;
+      res.status(200).send({ operations });
+    } catch (err) {
+      console.log(err);
+      res.status(500).send('Internal Server Error');
+    }
+  }); 
+
+  app.put('/:id/edit-catch-phrase', checkAuth, async (req, res) => {
+    try {
+      // Retrieve user from JWT token
+      if (!req.user) {
+        return res.status(401).send('Unauthorized. Please login.');
+      }
+      const user = await User.findById(req.params.id);
+  
+      // Fetch new catch phrase from foaas API
+      const response = await axios.get(`https://foaas.com/${req.body.operation}/${user.name}`, { headers: { 'Accept': 'application/json' } });
+      const newCatchPhrase = response.data.message;
+  
+      // Update user's catch phrase
+      user.catchPhrase = newCatchPhrase;
+      await user.save();
+  
+      res.status(200).send('Catch phrase updated successfully');
+    } catch (err) {
+      console.log(err);
+      res.status(500).send('Internal Server Error');
     }
   });
 };

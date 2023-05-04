@@ -17,6 +17,7 @@
     "url": "https://github.com/Babaganouche622/ACS-2230-API-final/issues"
   },
   "dependencies": {
+    "axios": "^1.4.0",
     "bcrypt": "^5.1.0",
     "cookie-parser": "^1.4.6",
     "dotenv": "^16.0.3",

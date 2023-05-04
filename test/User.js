@@ -1,6 +1,8 @@
+require('dotenv').config();
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const { describe, it } = require('mocha');
+process.env.NODE_ENV = 'test';
 const app = require('../server');
 
 const should = chai.should();
@@ -11,6 +13,7 @@ const agent = chai.request.agent(app);
 
 const User = require('../models/user');
 const user = require('../controllers/user');
+const { default: mongoose } = require('mongoose');
 
 describe('User', function () {
   before(async function () {
@@ -29,8 +32,9 @@ describe('User', function () {
 
   after(async function () {
     try {
-      await User.deleteOne({ _id: this.userId });
+      await User.deleteMany({});
       agent.close();
+      process.env.NODE_ENV = 'development';
     } catch (err) {
       console.error(err);
     }
