@@ -87,7 +87,7 @@ module.exports = (app) => {
   // SHOW one
   app.get('/users/:id', checkAuth, async (req, res) => {
     try {
-      if (!req.currentUser) {
+      if (req.user._id != req.params.id) {
         return res.status(401).send('Unauthorized. Please login.');
       }
       const { id } = req.params;
@@ -105,7 +105,7 @@ module.exports = (app) => {
   // UPDATE
   app.put('/users/:id/update', checkAuth, async (req, res) => {
     try {
-      if (!req.user) {
+      if (req.user._id != req.params.id) {
         return res.status(401).send('Unauthorized. Please login.');
       }
       const { id } = req.params;
@@ -125,8 +125,8 @@ module.exports = (app) => {
   // DELETE
   app.delete('/users/:id/delete', checkAuth, async (req, res) => {
     try {
-      if (!req.user) {
-        return res.status(401).send('Unauthorized. Please login.');
+      if (req.user._id != req.params.id) {
+        return res.status(401).send('Unauthorized. Get tha fuq bak.');
       }
       const { id } = req.params;
       const user = await User.findByIdAndDelete(id);
@@ -142,8 +142,12 @@ module.exports = (app) => {
   });
 
   // Route to attack another user
-  app.post('/users/:playerId/attack', async (req, res) => {
+  app.post('/users/:playerId/attack', checkAuth, async (req, res) => {
     try {
+      if (req.user._id != req.params.playerId) {
+        return res.status(401).send('Unauthorized. Not your account.');
+      }
+
       const attackingUser = await User.findById(req.params.playerId);
       const targetUser = await User.findById(req.body.enemyId);
       if (!attackingUser || !targetUser) {
@@ -168,7 +172,7 @@ module.exports = (app) => {
       res.send({
         attackingUser,
         targetUser,
-        message: `${attackingUser.name} uses catch phrase: ${attackingUser.catchPhrase} and deals ${attackValue} damage to ${targetUser.name}! ${levelUpMessage === undefined || null ? '' : levelUpMessage}`,
+        message: `${attackingUser.name} uses catch phrase: ${attackingUser.catchPhrase} And deals ${attackValue} damage to ${targetUser.name}! ${levelUpMessage === undefined || null ? '' : levelUpMessage}`,
       });
     } catch (e) {
       res.status(500).send();
