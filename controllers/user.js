@@ -150,18 +150,30 @@ module.exports = (app) => {
 
       const attackingUser = await User.findById(req.params.playerId);
       const targetUser = await User.findById(req.body.enemyId);
+
+      // Check if either the attacking or target users are found
       if (!attackingUser || !targetUser) {
         return res.status(404).send();
       }
+
+      // Check if the user has been updated within the last minute
+      const now = new Date();
+      const lastUpdated = targetUser.updatedAt || targetUser.createdAt;
+      const timeDiff = now - lastUpdated;
+      if (timeDiff < 60 * 1000) {
+        // User has been updated within the last minute, redirect with an error message
+        return res.status(403).json({ message: "This user has already been attacked in the last minute." })
+      }
+
       let levelUpMessage;
       const attackValue = attackingUser.attack;
       targetUser.currentHealth -= attackValue;
       attackingUser.experience += 10;
-      if (attackingUser.experience >= 100) {
+      if (attackingUser.experience >= (100 * attackingUser.level)) {
         attackingUser.level += 1;
         attackingUser.experience = 0;
         attackingUser.attack += 5;
-        attackingUser.maxHealth += 50;
+        attackingUser.maxHealth += (50 * (attackingUser.level / 2));
         attackingUser.currentHealth = attackingUser.maxHealth;
         levelUpMessage = `${attackingUser.name} leveled up!`;
       }
@@ -217,7 +229,7 @@ module.exports = (app) => {
       console.log(err);
       res.status(500).send('Internal Server Error');
     }
-  }); 
+  });
 
   app.put('/:id/edit-catch-phrase', checkAuth, async (req, res) => {
     try {
@@ -226,16 +238,57 @@ module.exports = (app) => {
         return res.status(401).send('Unauthorized. Please login.');
       }
       const user = await User.findById(req.params.id);
-  
+
       // Fetch new catch phrase from foaas API
       const response = await axios.get(`https://foaas.com/${req.body.operation}/${user.name}`, { headers: { 'Accept': 'application/json' } });
       const newCatchPhrase = response.data.message;
-  
+
       // Update user's catch phrase
       user.catchPhrase = newCatchPhrase;
       await user.save();
-  
+
       res.status(200).send('Catch phrase updated successfully');
+    } catch (err) {
+      console.log(err);
+      res.status(500).send('Internal Server Error');
+    }
+  });
+
+  // Seeding the database
+  app.get('/seed', async (req, res) => {
+    console.log('Before the try.')
+    try {
+      console.log('Inside the try')
+      // Clear existing data
+      await User.deleteMany({});
+      console.log('All users deleted');
+      // Create seed data
+      await User.create({
+        name: 'Brian',
+        email: 'brian@example.com',
+        password: 'test',
+      });
+
+      await User.create({
+        name: 'Sephiroth',
+        email: 'sephiroth@example.com',
+        password: 'sephirothTest',
+        maxHealth: 20000,
+      });
+      await User.create({
+        name: 'Kefka',
+        email: 'kefka@example.com',
+        password: 'kefkaTest',
+        maxHealth: 20000,
+      });
+      await User.create({
+        name: 'Gilgamesh',
+        email: 'gilgamesh@example.com',
+        password: 'gilgameshTest',
+        maxHealth: 20000,
+      });
+      console.log('Seed data created');
+      res.send('Seed data created');
     } catch (err) {
       console.log(err);
       res.status(500).send('Internal Server Error');
