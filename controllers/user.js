@@ -1,7 +1,7 @@
 require('dotenv').config();
+const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const User = require('../models/user');
 const axios = require('axios');
 const checkAuth = require('../middleware/checkAuth');
 
