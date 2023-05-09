@@ -35,4 +35,5 @@ userSchema.methods.comparePassword = function (password, done) {
   });
 };
 
-module.exports = model('User', userSchema);
+const userModel = model('User', userSchema);
+module.exports = userModel;
