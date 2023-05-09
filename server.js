@@ -13,7 +13,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-const User = require('./models/user');
+// const User = require('./models/user');
 
 require('./controllers/user.js')(app);
 
