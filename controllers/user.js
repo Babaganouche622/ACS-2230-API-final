@@ -238,7 +238,9 @@ module.exports = (app) => {
         return res.status(401).send('Unauthorized. Please login.');
       }
       const user = await User.findById(req.params.id);
-
+      if (req.user._id != user.id) {
+        return res.status(401).send('Must be logged in as user to change catch phrase.')
+      }
       // Fetch new catch phrase from foaas API
       const response = await axios.get(`https://foaas.com/${req.body.operation}/${user.name}`, { headers: { 'Accept': 'application/json' } });
       const newCatchPhrase = response.data.message;

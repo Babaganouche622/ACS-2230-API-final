@@ -18,16 +18,22 @@ const { default: mongoose } = require('mongoose');
 describe('User', function () {
   before(async function () {
     const user = new User({
+      name: 'example',
       email: 'example@nope.com',
       password: 'password',
       _id: '5d7a514b5d2c12c7449be042'
     });
     try {
       const savedUser = await user.save();
-      this.userId = savedUser._id;
+      
+      this.user = await User.findById(user.id);
     } catch (err) {
       console.error(err);
     }
+  });
+
+  this.afterEach(async function () {
+      agent.get('/logout');
   });
 
   after(async function () {
@@ -59,7 +65,7 @@ describe('User', function () {
   it('should be able to login', function (done) {
     agent
     .post('/login')
-    .send({ email: 'newexample@nope.com', password: 'password' })
+    .send({ email: this.user.email, password: 'password' })
     .end(function (err, res) {
       res.should.have.status(200);
       agent.should.have.cookie('nToken');
@@ -72,6 +78,27 @@ describe('User', function () {
       res.should.have.status(200);
       agent.should.not.have.cookie('nToken');
       done();
+    });
+  });
+
+  it('should be able to get current user', function (done) {
+    agent.post('/login').send({ email: this.user.email, password: 'password'}).end(function (err, res) {
+      agent.get(`/users/5d7a514b5d2c12c7449be042`).end(function (err, res) {
+        res.should.have.status(200);
+        done();
+      });
+    });
+  });
+
+  it('should be able to update current user', function (done) {
+    console.log(this.user.password)
+    console.log(this.user);
+    console.log(this.user.id)
+    agent.post('/login').send({ email: this.user.email, password: 'password'}).end(function (err, res) {
+      agent.put(`/users/5d7a514b5d2c12c7449be042/update`).send({ email: 'changed@nope.com', password: 'test'}).end(function (err, res) {
+        res.should.have.status(200);
+        done();
+      });
     });
   });
 });
